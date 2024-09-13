@@ -113,6 +113,7 @@ FONT_BOLD = ("Arial", 10, "bold")
 root = tk.Tk()
 root.title("文件时间修改器")
 root.configure(bg=BG_COLOR)
+root.iconbitmap("icon.ico")  # 设置窗口图标
 
 # 配置样式
 style = ttk.Style()
