@@ -1,57 +1,105 @@
 import os
+import sys
+import ctypes
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from datetime import datetime
 import subprocess
+import platform
 
-def run_powershell_command(cmd):
+
+# 检查是否具有管理员权限
+def is_admin():
+    if platform.system() != "Windows":
+        return True  # 非 Windows 系统默认返回 True
     try:
-        subprocess.run(["powershell.exe", "-Command", cmd], check=True, stderr=subprocess.PIPE)
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+
+# 运行命令的函数
+def run_command(cmd):
+    try:
+        if platform.system() == "Windows":
+            # 在 Windows 系统运行 PowerShell 命令
+            subprocess.run(["powershell.exe", "-Command", cmd], check=True, stderr=subprocess.PIPE)
+        else:
+            # 在其他系统上运行 shell 命令
+            subprocess.run(cmd, shell=True, check=True, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
+        # 捕获并显示命令执行错误
         messagebox.showerror("错误", e.stderr.decode())
     except Exception as e:
+        # 捕获并显示其他错误
         messagebox.showerror("错误", str(e))
 
+
+# 选择文件和文件夹的函数
 def select_files():
+    # 打开文件选择对话框
     file_paths = filedialog.askopenfilenames()
+    # 打开文件夹选择对话框
     folder_paths = filedialog.askdirectory()
+    # 合并所有选择的路径
     all_selected_paths = list(file_paths) + [folder_paths]
+    # 清空文本框并插入选择的路径
     path_text.delete('1.0', tk.END)
     path_text.insert('1.0', '\n'.join(all_selected_paths))
 
+
+# 修改文件时间的函数
 def change_times(attribute):
+    # 获取输入的时间字符串
     time_str = time_entry.get()
+    # 获取选择的路径
     paths = path_text.get('1.0', tk.END).strip().split('\n')
     if not paths or paths == ['']:
+        # 如果没有选择路径，显示警告
         messagebox.showwarning("警告", "请先选择文件或文件夹")
         return
     if not time_str:
+        # 如果没有输入时间，显示警告
         messagebox.showwarning("警告", "请先输入时间")
         return
 
     try:
+        # 验证时间格式是否正确
         datetime.strptime(time_str, "%m/%d/%Y %H:%M:%S")
     except ValueError:
+        # 如果时间格式不正确，显示错误
         messagebox.showerror("错误", "时间格式不正确，请使用 MM/DD/YYYY HH:MM:SS 格式")
         return
 
-    # 弹窗询问用户是否更改所选文件夹的时间戳
+    # 询问是否更改文件夹的时间戳
     change_folder_time = messagebox.askyesno("更改文件夹时间", "是否更改所选文件夹的时间戳？")
-    
-    # 构建PowerShell命令
-    powershell_script = ""
-    for path in paths:
-        # 检查路径是否为文件夹
-        if os.path.isdir(path):
-            # 根据用户选择决定是否包括父文件夹本身
-            if change_folder_time:
+
+    if platform.system() == "Windows":
+        # 在 Windows 系统上构建 PowerShell 脚本
+        powershell_script = ""
+        for path in paths:
+            if os.path.isdir(path):
+                if change_folder_time:
+                    powershell_script += f"Get-Item -LiteralPath '{path}' | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
+                powershell_script += f"Get-ChildItem -LiteralPath '{path}' -Recurse | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
+            else:
                 powershell_script += f"Get-Item -LiteralPath '{path}' | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
-            powershell_script += f"Get-ChildItem -LiteralPath '{path}' -Recurse | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
-        else:
-            powershell_script += f"Get-Item -LiteralPath '{path}' | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
-    
-    # 执行PowerShell命令
-    run_powershell_command(powershell_script)
+        run_command(powershell_script)
+    else:
+        # 在其他系统上构建 shell 命令
+        unix_command = ""
+        for path in paths:
+            if os.path.isdir(path):
+                if change_folder_time:
+                    unix_command += f"touch -d '{time_str}' '{path}';"
+                for root, dirs, files in os.walk(path):
+                    for name in dirs + files:
+                        unix_command += f"touch -d '{time_str}' '{os.path.join(root, name)}';"
+            else:
+                unix_command += f"touch -d '{time_str}' '{path}';"
+        run_command(unix_command)
+
+    # 显示成功信息
     messagebox.showinfo("成功", f"{attribute} 时间已更改")
 
 
@@ -61,16 +109,18 @@ FG_COLOR = "#333333"
 FONT_NORMAL = ("Arial", 10)
 FONT_BOLD = ("Arial", 10, "bold")
 
+# 创建主窗口
 root = tk.Tk()
 root.title("文件时间修改器")
 root.configure(bg=BG_COLOR)
 
+# 配置样式
 style = ttk.Style()
 style.configure("TLabel", background=BG_COLOR, foreground=FG_COLOR, font=FONT_NORMAL)
 style.configure("TButton", font=FONT_NORMAL)
 style.configure("TEntry", font=FONT_NORMAL)
 
-# 使用grid布局
+# 创建并放置标签、文本框和按钮
 path_label = ttk.Label(root, text="选择的路径:")
 path_label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
 
@@ -95,8 +145,21 @@ change_modification_button.grid(row=4, column=1, padx=10, pady=5)
 change_access_button = ttk.Button(root, text="修改访问时间", command=lambda: change_times('LastAccessTime'))
 change_access_button.grid(row=5, column=0, padx=10, pady=(5, 10))
 
-# 让第一列和第二列的宽度相等
+# 获取当前系统信息
+system_info = platform.system()
+
+# 创建并放置系统信息标签
+system_label = ttk.Label(root, text=f"当前系统: {system_info}")
+system_label.grid(row=6, column=1, padx=10, pady=(5, 10), sticky="se")
+
+# 配置列的权重
 root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=1)
 
+# 检查并请求管理员权限
+if not is_admin():
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+    sys.exit()
+
+# 运行主循环
 root.mainloop()
