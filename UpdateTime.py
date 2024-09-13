@@ -109,11 +109,26 @@ FG_COLOR = "#333333"
 FONT_NORMAL = ("Arial", 10)
 FONT_BOLD = ("Arial", 10, "bold")
 
+
+# 在当前文件夹和子文件夹中寻找icon.ico
+def find_icon():
+    for root_dir, _, files in os.walk(os.getcwd()):
+        if "icon.ico" in files:
+            return os.path.join(root_dir, "icon.ico")
+    return None
+
+
 # 创建主窗口
 root = tk.Tk()
-root.title("文件时间修改器")
+root.title("文件时间修改酱")
 root.configure(bg=BG_COLOR)
-root.iconbitmap("icon.ico")  # 设置窗口图标
+# 设置窗口图标
+icon_path = find_icon()
+if icon_path:
+    root.iconbitmap(icon_path)
+else:
+    messagebox.showerror("错误", "未找到icon.ico文件")
+    sys.exit()
 
 # 配置样式
 style = ttk.Style()
