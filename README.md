@@ -2,7 +2,7 @@
 
 ---
 
-English|简体中文
+[English](https://github.com/Cheng-MaoMao/Windows-File-Time-Modification-Tool/blob/main/README_en.md)|简体中文
 
 ---
 
