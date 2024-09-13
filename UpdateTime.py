@@ -123,12 +123,13 @@ root = tk.Tk()
 root.title("文件时间修改酱")
 root.configure(bg=BG_COLOR)
 # 设置窗口图标
-icon_path = find_icon()
-if icon_path:
-    root.iconbitmap(icon_path)
-else:
-    messagebox.showerror("错误", "未找到icon.ico文件")
-    sys.exit()
+if platform.system() == "Windows":
+    icon_path = find_icon()
+    if icon_path:
+        root.iconbitmap(icon_path)
+    else:
+        messagebox.showerror("错误", "未找到icon.ico文件")
+        sys.exit()
 
 # 配置样式
 style = ttk.Style()
