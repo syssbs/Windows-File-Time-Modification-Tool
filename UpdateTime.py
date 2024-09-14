@@ -7,7 +7,8 @@ from datetime import datetime
 import subprocess
 import platform
 
-# 检查是否具有管理员权限
+
+# 检查是否具有管理员权限(仅限Windows)
 def is_admin():
     if platform.system() != "Windows":
         return True  # 非 Windows 系统默认返回 True
@@ -15,6 +16,7 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
+
 
 # 运行命令的函数
 def run_command(cmd):
@@ -32,6 +34,7 @@ def run_command(cmd):
         # 捕获并显示其他错误
         messagebox.showerror("错误", str(e))
 
+
 # 选择文件的函数
 def select_files():
     # 打开文件选择对话框
@@ -44,6 +47,7 @@ def select_files():
     path_text.delete('1.0', tk.END)
     path_text.insert('1.0', '\n'.join(current_paths))
 
+
 # 选择文件夹的函数
 def select_folder():
     # 打开文件夹选择对话框
@@ -55,6 +59,7 @@ def select_folder():
     current_paths.append(folder_path)
     path_text.delete('1.0', tk.END)
     path_text.insert('1.0', '\n'.join(current_paths))
+
 
 # 修改文件时间的函数
 def change_times(attribute):
@@ -112,11 +117,13 @@ def change_times(attribute):
     # 显示成功信息
     messagebox.showinfo("成功", f"{attribute} 时间已更改")
 
+
 # 设置主题颜色和字���
 BG_COLOR = "#f0f0f0"
 FG_COLOR = "#333333"
 FONT_NORMAL = ("Arial", 10)
 FONT_BOLD = ("Arial", 10, "bold")
+
 
 # 在当前文件夹和子文件夹中寻找icon.ico
 def find_icon():
@@ -124,6 +131,7 @@ def find_icon():
         if "icon.ico" in files:
             return os.path.join(root_dir, "icon.ico")
     return None
+
 
 # 创建主窗口
 root = tk.Tk()
