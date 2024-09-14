@@ -7,7 +7,6 @@ from datetime import datetime
 import subprocess
 import platform
 
-
 # 检查是否具有管理员权限
 def is_admin():
     if platform.system() != "Windows":
@@ -16,7 +15,6 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
-
 
 # 运行命令的函数
 def run_command(cmd):
@@ -34,19 +32,29 @@ def run_command(cmd):
         # 捕获并显示其他错误
         messagebox.showerror("错误", str(e))
 
-
-# 选择文件和文件夹的函数
+# 选择文件的函数
 def select_files():
     # 打开文件选择对话框
     file_paths = filedialog.askopenfilenames()
-    # 打开文件夹选择对话框
-    folder_paths = filedialog.askdirectory()
-    # 合并所有选择的路径
-    all_selected_paths = list(file_paths) + [folder_paths]
-    # 清空文本框并插入选择的路径
+    # 将选择的文件路径添加到文本框
+    current_paths = path_text.get('1.0', tk.END).strip().split('\n')
+    if current_paths == ['']:
+        current_paths = []
+    current_paths.extend(file_paths)
     path_text.delete('1.0', tk.END)
-    path_text.insert('1.0', '\n'.join(all_selected_paths))
+    path_text.insert('1.0', '\n'.join(current_paths))
 
+# 选择文件夹的函数
+def select_folder():
+    # 打开文件夹选择对话框
+    folder_path = filedialog.askdirectory()
+    # 将选择的文件夹路径添加到文本框
+    current_paths = path_text.get('1.0', tk.END).strip().split('\n')
+    if current_paths == ['']:
+        current_paths = []
+    current_paths.append(folder_path)
+    path_text.delete('1.0', tk.END)
+    path_text.insert('1.0', '\n'.join(current_paths))
 
 # 修改文件时间的函数
 def change_times(attribute):
@@ -81,7 +89,8 @@ def change_times(attribute):
             if os.path.isdir(path):
                 if change_folder_time:
                     powershell_script += f"Get-Item -LiteralPath '{path}' | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
-                powershell_script += f"Get-ChildItem -LiteralPath '{path}' -Recurse | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
+                if not only_folders_var.get():
+                    powershell_script += f"Get-ChildItem -LiteralPath '{path}' -Recurse | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
             else:
                 powershell_script += f"Get-Item -LiteralPath '{path}' | %{{ $_.{attribute} = Get-Date '{time_str}' }};"
         run_command(powershell_script)
@@ -92,9 +101,10 @@ def change_times(attribute):
             if os.path.isdir(path):
                 if change_folder_time:
                     unix_command += f"touch -d '{time_str}' '{path}';"
-                for root, dirs, files in os.walk(path):
-                    for name in dirs + files:
-                        unix_command += f"touch -d '{time_str}' '{os.path.join(root, name)}';"
+                if not only_folders_var.get():
+                    for root, dirs, files in os.walk(path):
+                        for name in dirs + files:
+                            unix_command += f"touch -d '{time_str}' '{os.path.join(root, name)}';"
             else:
                 unix_command += f"touch -d '{time_str}' '{path}';"
         run_command(unix_command)
@@ -102,13 +112,11 @@ def change_times(attribute):
     # 显示成功信息
     messagebox.showinfo("成功", f"{attribute} 时间已更改")
 
-
-# 设置主题颜色和字体
+# 设置主题颜色和字���
 BG_COLOR = "#f0f0f0"
 FG_COLOR = "#333333"
 FONT_NORMAL = ("Arial", 10)
 FONT_BOLD = ("Arial", 10, "bold")
-
 
 # 在当前文件夹和子文件夹中寻找icon.ico
 def find_icon():
@@ -117,10 +125,9 @@ def find_icon():
             return os.path.join(root_dir, "icon.ico")
     return None
 
-
 # 创建主窗口
 root = tk.Tk()
-root.title("文件时间修改酱")
+root.title("文件时间修改器")
 root.configure(bg=BG_COLOR)
 # 设置窗口图标
 if platform.system() == "Windows":
@@ -150,8 +157,11 @@ time_label.grid(row=2, column=0, padx=10, pady=(10, 0), sticky="w")
 time_entry = ttk.Entry(root)
 time_entry.grid(row=2, column=1, padx=10, pady=(10, 0), sticky="ew")
 
-select_button = ttk.Button(root, text="浏览选择", command=select_files)
-select_button.grid(row=3, column=0, padx=10, pady=10)
+select_files_button = ttk.Button(root, text="选择文件", command=select_files)
+select_files_button.grid(row=3, column=0, padx=10, pady=10)
+
+select_folder_button = ttk.Button(root, text="选择文件夹", command=select_folder)
+select_folder_button.grid(row=3, column=1, padx=10, pady=10)
 
 change_creation_button = ttk.Button(root, text="修改创建时间", command=lambda: change_times('CreationTime'))
 change_creation_button.grid(row=4, column=0, padx=10, pady=5)
@@ -161,6 +171,11 @@ change_modification_button.grid(row=4, column=1, padx=10, pady=5)
 
 change_access_button = ttk.Button(root, text="修改访问时间", command=lambda: change_times('LastAccessTime'))
 change_access_button.grid(row=5, column=0, padx=10, pady=(5, 10))
+
+# 添加"只修改文件夹"复选框
+only_folders_var = tk.BooleanVar()
+only_folders_check = ttk.Checkbutton(root, text="只修改文件夹", variable=only_folders_var)
+only_folders_check.grid(row=5, column=1, padx=10, pady=(5, 10))
 
 # 获取当前系统信息
 system_info = platform.system()
