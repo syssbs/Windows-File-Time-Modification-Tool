@@ -14,15 +14,14 @@ This tool can modify the creation time, modification time, and access time of fi
 
 ### Existing Functions
 
-#### 1. Support batch modification of the creation time, modification time, and access time of folders and files.
-
-#### 2. Support selecting folders and modifying the time of the folder and its contents together or only modifying the time of the folder's contents.
+1. Support batch modification of the creation time, modification time, and access time of folders and files.
+2. Support selecting folders and modifying the time of the folder and its contents together or only modifying the time of the folder's contents.
 
 ### Optimization Functions
 
-#### 1. Modifying the time of the folder only, not the time of its contents
+- [x] Modifying the time of the folder only, not the time of its contents
 
-#### 2. Supporting modification of the creation time on Linux environments.
+- [ ] Supporting modification of the creation time on Linux environments.
 
 ## System Commands for Modifying File Times
 
