@@ -135,7 +135,7 @@ def find_icon():
 
 # 创建主窗口
 root = tk.Tk()
-root.title("文件时间修改器")
+root.title("文件时间修改酱")
 root.configure(bg=BG_COLOR)
 # 设置窗口图标
 if platform.system() == "Windows":
